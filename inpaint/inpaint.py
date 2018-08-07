@@ -1,5 +1,3 @@
-# Standalone inpainting script.
-
 from PIL import Image
 import numpy as np
 import io

@@ -1,13 +1,10 @@
 import React, { Component } from 'react';
-
+import {predict, inpaint, drawImage, createCompRows, drawCAM} from './util.js';
 import {Table, TableHeader, TableHeaderColumn, TableBody, TableRow, Paper} from 'material-ui';
+import {IMAGENET_CLASSES} from './squeezenet/imagenet_classes.js';
 import {canvasRGB} from 'stackblur-canvas';
 import {ClipLoader} from 'react-spinners';
-
-import {predict, inpaint, drawImage, createCompRows, drawCAM} from './util.js';
-import {IMAGENET_CLASSES} from './squeezenet/imagenet_classes.js';
 import './App.css';
-
 
 class Modified extends Component {
     constructor(props) {
@@ -18,7 +15,7 @@ class Modified extends Component {
             mouseDown: false,
             clickX: [],
             clickY: [],
-            order: false,
+            order: 0,
             loading: false
         };
     }
@@ -74,32 +71,34 @@ class Modified extends Component {
 
     mouseUp = () => {
         this.setState({
-            mouseDown: false,
+            mouseDown: false, 
             loading: true
         }) 
 
-        inpaint(this.cImg.getContext('2d'), this.cDraw.getContext('2d')).then(img => {
+        inpaint(this.cImg.getContext('2d'), this.cDraw.getContext('2d'))
+        .then(img => {
             let classes = null;
             if (!this.state.order) {
                 classes = Array.from(this.props.topK.keys());
             }
-            predict(img, this.props.net, classes, function(top, activation) {
+            predict(img, this.props.net, this.props.netName, classes, function(top, activation) {
                 const rows = createCompRows(top, this.props.topK);
                 this.setState({
                     results: rows,
                     activation: activation
                 });
             }.bind(this));
-         }).then(() => this.setState({ loading: false }));
+         }).then(() => this.setState({
+            loading: false
+         }));
     }
 
     mouseLeave = () => {
+       const ctx = this.cDraw.getContext('2d');
+       ctx.clearRect(0, 0, 227, 227);
        this.setState({
            mouseDown: false
        }) 
-
-       const ctx = this.cDraw.getContext('2d');
-       ctx.clearRect(0, 0, 227, 227);
     }
 
     drawCAM = (e) => {
@@ -107,7 +106,7 @@ class Modified extends Component {
             let ar = Object.assign([], IMAGENET_CLASSES);
             let row = this.state.results[e[0]];
             let index = ar.indexOf(row.key);
-            drawCAM(this.cImg, this.props.net, this.state.activation, this.cCam, index);
+            drawCAM(this.cImg, this.props.net, this.props.netName, this.state.activation, this.cCam, index);
         } else {
             const ctx = this.cCam.getContext('2d');
             ctx.clearRect(0, 0, 227, 227);
@@ -133,7 +132,7 @@ class Modified extends Component {
         if (!val) {
             classes = Array.from(this.props.topK.keys());
         }
-        predict(this.cImg, this.props.net, classes, function(top, activation) {
+        predict(this.cImg, this.props.net, this.props.netName, classes, function(top, activation) {
             let rows = createCompRows(top, this.props.topK);
             this.setState({
                 results: rows,
@@ -145,7 +144,7 @@ class Modified extends Component {
     componentDidMount() {
         const ctx = this.cImg.getContext('2d');
         drawImage(ctx, this.props.image, function(img) {
-            predict(img, this.props.net, null, function(top, activation) {
+            predict(img, this.props.net, this.props.netName, null, function(top, activation) {
                 let rows = createCompRows(top, null);
                 this.setState({
                     results: rows,
@@ -165,7 +164,7 @@ class Modified extends Component {
             ctx.clearRect(0, 0, 227, 227);
             ctx = this.cImg.getContext('2d');
             drawImage(ctx, nProps.image, function(img) {
-                predict(img, nProps.net, null, function(top, activation) {
+                predict(img, nProps.net, nProps.netName, null, function(top, activation) {
                     let rows = createCompRows(top, null);
                     this.setState({
                         results: rows,
@@ -176,7 +175,7 @@ class Modified extends Component {
             }.bind(this));
         } else if (nProps.blur) {
             canvasRGB(this.cImg, 0, 0, 227, 227, this.props.blurSize);
-            predict(this.cImg, nProps.net, classes, function(top, activation) {
+            predict(this.cImg, nProps.net, nProps.netName, classes, function(top, activation) {
                 let rows = createCompRows(top, this.props.topK);
                 this.setState({
                     results: rows,
@@ -190,33 +189,34 @@ class Modified extends Component {
     render() {
         return (
             <div className="box" id="modified">
-                <Paper style={{marginBottom: 30, height: 227, width: 227, display: "inline-block"}} zDepth={3}>
-                    <canvas id="modified-canvas" height="227px" width="227px" 
-                            ref={cImg => this.cImg = cImg}> 
-                    </canvas>
-                    <canvas id="modified-cam" height="227px" width="227px" ref={c => this.cCam = c}></canvas>
-                    <canvas id="draw-canvas" height="227px" width="227px" 
-                            ref={cDraw => this.cDraw = cDraw} onMouseDown={this.mouseDown}
-                            onMouseMove={this.mouseMove} onMouseUp={this.mouseUp}
-                            onMouseLeave={this.mouseLeave}>
-                    </canvas>
-                </Paper>
-                <div id="inpaint-loader">
-                    <ClipLoader id="inpaint-loader" color="rgb(63, 81, 181)" loading={this.state.loading} />
-                </div>
-                <h3 id="modified-title">Modified Image</h3>
-                <Table className="table" onRowSelection={this.drawCAM}>
-                    <TableHeader adjustForCheckbox={false} displaySelectAll={false}>
-                        <TableRow className="header-row" onCellClick={(e, f, g) => this.orderChanged(e, f, g)}>
-                            <TableHeaderColumn>Class</TableHeaderColumn>
-                            <TableHeaderColumn style={{textAlign: 'right', cursor: 'pointer'}}>Confidence %</TableHeaderColumn>
-                            <TableHeaderColumn style={{textAlign: 'right'}}>Absolute % Change</TableHeaderColumn>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody displayRowCheckbox={false} showRowHover={true} deselectOnClickaway={false}>
-                        {this.state.results}
-                    </TableBody>
-                </Table>
+              <Paper style={{marginBottom: 30, height: 227, width: 227, display: "inline-block"}} zDepth={3}>
+                <canvas id="modified-canvas" height="227px" width="227px" 
+                        ref={cImg => this.cImg = cImg}> 
+                </canvas>
+                <canvas id="modified-cam" height="227px" width="227px" ref={c => this.cCam = c}></canvas>
+                <canvas id="draw-canvas" height="227px" width="227px" 
+                        ref={cDraw => this.cDraw = cDraw} onMouseDown={this.mouseDown}
+                        onMouseMove={this.mouseMove} onMouseUp={this.mouseUp}
+                        onMouseLeave={this.mouseLeave}>
+                </canvas>
+              </Paper>
+              <div id="inpaint-loader">
+                  <ClipLoader id="inpaint-loader" color="rgb(63, 81, 181)" loading={this.state.loading} />
+              </div>
+              <h3>Modified Image</h3>
+              <Table className="table" onRowSelection={this.drawCAM}>
+                  <TableHeader adjustForCheckbox={false} displaySelectAll={false}>
+                      <TableRow className="header-row" onCellClick={(e, f, g) => this.orderChanged(e, f, g)}>
+                          <TableHeaderColumn>Class</TableHeaderColumn>
+                          <TableHeaderColumn style={{textAlign: 'right', cursor: 'pointer'}}>Confidence %</TableHeaderColumn>
+                          <TableHeaderColumn style={{textAlign: 'right'}}>Absolute % Change</TableHeaderColumn>
+                      </TableRow>
+                  </TableHeader>
+                  <TableBody displayRowCheckbox={false} showRowHover={true} deselectOnClickaway={false}>
+                      {this.state.results}
+                  </TableBody>
+              </Table>
+              <p>List of all 1000 ImageNet classes supported <a style={{color:"#3366BB"}} href="https://gist.github.com/yrevar/942d3a0ac09ec9e5eb3a">here</a>.</p>
             </div>
         );
     }

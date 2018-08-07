@@ -1,12 +1,11 @@
 import React from 'react';
-
-import {TableRow, TableRowColumn} from 'material-ui';
 import * as dl from 'deeplearn';
+import {InpaintTelea} from './inpaint';
+import {TableRow, TableRowColumn} from 'material-ui';
 import {scaleSequential} from 'd3-scale';
 import {rgb} from 'd3-color';
 import {interpolateInferno} from 'd3-scale-chromatic'
-
-import {InpaintTelea} from './inpaint';
+import * as model from './model.js';
 
 const SCALE = scaleSequential(interpolateInferno).domain([0,1]);
 
@@ -16,15 +15,28 @@ export function drawImage(ctx, src, callback) {
 
     img.onload = function () {
         ctx.clearRect(0, 0, 227, 227);
-        ctx.drawImage(img, 0, 0);
+        ctx.drawImage(img, 0, 0, 227, 227);
         callback(img);
     }
 }
 
-export function drawCAM(img, net, activation, canvas, id) {
-    let cam = net.CAM(net.getLastWeights(), activation, id);
-    cam = cam.dataSync();
+export function drawCAM(img, net, netName, activation, canvas, id) {
+    const weights = net.getLastWeights();
+    // console.log("net.constructor name = ", netName);    // Debug: network name
+    
+    var featmapSize = 169;
+    var depth = 512;
+    if (netName == "SqueezeNet") {
+        featmapSize = 169;
+        depth = 512;
+    } else {
+        // MobileNet
+        featmapSize = 64;
+        depth = 1024;
+    }
+    let cam = model.CAM(weights, activation, id, featmapSize, depth);
 
+    cam = cam.dataSync();
     let buff = new Uint8ClampedArray(227*227*4);
     for (let y = 0; y < 227; y++) {
         for (let x = 0; x < 227; x++) {
@@ -43,12 +55,12 @@ export function drawCAM(img, net, activation, canvas, id) {
     ctx.putImageData(iData, 0, 0);
 }
 
-export function predict(img, net, classes, callback) {
+export function predict(img, net, netName, classes, callback) {
     const pixels = dl.fromPixels(img);
     const resized = dl.image.resizeBilinear(pixels, [227, 227]);
 
     const t0 = performance.now();
-    const resAll = net.predictWithActivation(resized, 'fire9');
+    const resAll = (netName=="SqueezeNet") ? net.predictWithActivation(resized, 'fire9') : net.predictWithActivation(resized);
     console.log('Classification took ' + parseFloat(Math.round(performance.now() - t0)) + ' milliseconds');
 
     const res = resAll.logits;
@@ -85,7 +97,7 @@ export async function inpaint(iCtx, dCtx) {
     }
 
     // Try to call resynthesizer, if not use Telea
-    return fetch('http://127.0.0.1:5000/inpaint', {
+    return fetch('http://ec2-54-152-210-53.compute-1.amazonaws.com/inpaint', {
         method: 'POST',
         mode: 'cors',
         headers: {

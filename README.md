@@ -1,3 +1,8 @@
+This is the forked repository for the accepted [CVPR 2018][cvpr18] Demo: **Interactive Classification for Deep Learning Interpretation**.
+As one of its original developers I'll be pushing experimental features and refinements here geared towards Computer Vision research. 
+___
+
+
 # Interactive Classification for Deep Learning Interpretation
 
 We have designed and developed an interactive system that allows users to experiment with deep learning image classifiers and explore their robustness and sensitivity.
@@ -6,10 +11,9 @@ The system also computes class activation maps for any selected class, which hig
 The system runs fully in browser using Tensorflow.js, React, and SqueezeNet.
 An advanced inpainting version is also available using a server running the PatchMatch algorithm from the [GIMP Resynthesizer plugin](https://github.com/bootchk/resynthesizer).
 
-[![YouTube video demo](images/thumbnail.png)](https://youtu.be/llub5GcOF6w)
-
-This is the code repository for the accepted [CVPR 2018][cvpr18] Demo: **Interactive Classification for Deep Learning Interpretation**.
-Visit our research group homepage [Polo Club of Data Science][poloclub] at [Georgia Tech](http://www.gatech.edu) for more related research!
+![UI demo](images/new_ui.png)
+####NEW: upload custom images and square-crop for instant classification
+![custom upload](images/custom_upload.png)
 
 ## Example Scenario: Interpreting "Failed" Classification
 
@@ -56,15 +60,6 @@ The following steps are needed to set up PatchMatch inpainting, which currently 
 **[Interactive Classification for Deep Learning Interpretation][site]**  
 [Angel Cabrera][angel], [Fred Hohman][fred], [Jason Lin][jason], [Duen Horng (Polo) Chau][polo]  
 *Demo, Conference on Computer Vision and Pattern Recognition (CVPR). June 18, 2018. Salt Lake City, USA.*
-
-## Researchers
-
-|  Name                 | Affiliation                     |
-|-----------------------|---------------------------------|
-| [Angel Cabrera][angel]           | Georgia Tech |
-| [Fred Hohman][fred]    | Georgia Tech |
-| [Jason Lin][jason]        | Georgia Tech |
-| [Duen Horng (Polo) Chau][polo]             | Georgia Tech |
 
 ## License
 
