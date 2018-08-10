@@ -12,7 +12,7 @@ The system runs fully in browser using Tensorflow.js, React, and SqueezeNet.
 An advanced inpainting version is also available using a server running the PatchMatch algorithm from the [GIMP Resynthesizer plugin](https://github.com/bootchk/resynthesizer).
 
 ![UI demo](images/new_ui.png)
-####NEW: upload custom images and square-crop for instant classification
+#### NEW: upload custom images and square-crop for instant classification
 ![custom upload](images/custom_upload.png)
 
 ## Example Scenario: Interpreting "Failed" Classification
