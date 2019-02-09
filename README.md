@@ -1,4 +1,4 @@
-This is the extended repository for the accepted [CVPR 2018][cvpr18] Demo: **Interactive Classification for Deep Learning Interpretation**.
+This is the extended fork for the accepted [CVPR 2018][cvpr18] Demo: **Interactive Classification for Deep Learning Interpretation**.
 As its original developer, I'll be pushing experimental features and refinements here geared towards Computer Vision research. 
 ___
 
